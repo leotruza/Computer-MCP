@@ -22,6 +22,51 @@ The server runs **inside a manually configured Linux VM**. It does not create, p
 
 Node.js 20+, graphical X11 session, and `ffmpeg`, `xdotool`, `xclip`, and `xrandr`. On Debian-like systems: `sudo apt install ffmpeg xdotool xclip x11-xserver-utils`. Wayland is detected but not bypassed; use an X11 session for the implemented capabilities.
 
+## Configuração manual da VM / Manual VM setup
+
+O projeto não cria nem configura a VM. Execute os passos abaixo dentro da VM, usando uma distribuição Linux com ambiente gráfico e um usuário dedicado à sessão. Os nomes das telas variam entre VirtualBox, KVM/QEMU, VMware e Hyper-V, mas os requisitos dentro do convidado são os mesmos.
+
+1. **Crie uma VM isolada**, instale uma distribuição Linux com desktop (por exemplo, Debian ou Ubuntu Desktop), crie um usuário para a sessão gráfica, mantenha o sistema atualizado e faça um snapshot antes de testes destrutivos.
+2. **Escolha uma sessão X11** na tela de login, como “GNOME on Xorg”, “Ubuntu on Xorg” ou uma sessão Xfce/X11. Esta implementação não contorna as políticas de Wayland. A variável `DISPLAY` deve apontar para o servidor X da mesma sessão e do mesmo usuário que executará o MCP.
+3. **Instale as ferramentas dentro da VM**:
+
+   ```bash
+   sudo apt update
+   sudo apt install ffmpeg xdotool xclip x11-xserver-utils curl git build-essential
+   ```
+
+   Em outras distribuições, instale os equivalentes de `ffmpeg`, `xdotool`, `xclip` e `xrandr`. Em Debian/Ubuntu, `x11-xserver-utils` fornece `xrandr`.
+4. **Instale Node.js 20 ou superior** por um método aprovado pela distribuição ou pelo administrador. Confirme que a sessão gráfica está acessível:
+
+   ```bash
+   node --version
+   npm --version
+   echo "$DISPLAY"
+   echo "${WAYLAND_DISPLAY:-unset}"
+   xrandr --query
+   ```
+
+   `DISPLAY` deve estar definido, `xrandr --query` deve listar ao menos um monitor e `WAYLAND_DISPLAY` deve estar vazio para o caminho X11. Não execute o processo com `sudo` para contornar autenticação X11; use o mesmo usuário da sessão.
+5. **Copie o projeto para a VM** por Git ou por um artefato revisado. Não monte o filesystem do host, não compartilhe diretórios pessoais, não exponha o socket Docker do host e não copie credenciais ou chaves SSH do host:
+
+   ```bash
+   git clone https://github.com/leotruza/Computer-MCP.git
+   cd Computer-MCP
+   npm ci
+   npm run build
+   npm test
+   ```
+6. **Execute pela integração MCPO**, evitando instâncias duplicadas:
+
+   ```bash
+   mcpo --host 127.0.0.1 --port 8084 -- node "$PWD/dist/index.js"
+   ```
+
+   Se MCPO for executado por um serviço separado, configure explicitamente o usuário da sessão, `DISPLAY` e a autorização X11. Mantenha MCPO em `127.0.0.1` quando não houver necessidade de acesso remoto.
+7. **Valide a VM** primeiro com `computer_environment`, depois `computer_screen_size` e `computer_screenshot`. Confirme visualmente que a imagem corresponde à tela da VM. Só depois teste mouse, teclado, clipboard, terminal e aplicações. O teste do Firefox deve usar exclusivamente screenshot, coordenadas e teclado.
+
+This project does not create or configure the VM. Inside the VM, install a Linux desktop, select an X11 session, install `ffmpeg`, `xdotool`, `xclip`, and `xrandr`, install Node.js 20+, clone the project, run `npm ci`, `npm run build`, and verify `DISPLAY`, `xrandr --query`, `computer_environment`, `computer_screen_size`, and `computer_screenshot`. Use the same desktop user for the X11 session and the MCP process. Avoid host filesystem mounts, host credentials, Docker sockets, and broad network exposure. Prefer NAT or another restricted VM network mode and keep MCPO bound to loopback.
+
 ## Instalação / Installation
 
 ```bash

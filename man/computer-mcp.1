@@ -7,6 +7,33 @@ computer-mcp \- Linux desktop GUI control MCP server
 .B node dist/index.js
 .SH DESCRIPTION
 Runs an MCP server over standard input/output for X11 desktop screenshots, mouse, keyboard, and clipboard control. The VM is configured manually; no HTTP listener is created.
+.SH VM SETUP
+This program does not create, provision, virtualize, or modify a VM. Prepare the guest manually:
+.IP 1. 3
+Install a Linux distribution with a graphical desktop and create a dedicated desktop user. Keep the guest updated and take a snapshot before destructive tests.
+.IP 2. 3
+Log into an X11 session, such as GNOME on Xorg, Ubuntu on Xorg, or Xfce. Wayland compositor security is not bypassed by this program.
+.IP 3. 3
+Install the required guest packages. On Debian or Ubuntu:
+.PP
+.EX
+sudo apt update
+sudo apt install ffmpeg xdotool xclip x11-xserver-utils curl git build-essential
+.EE
+.IP 4. 3
+Install Node.js 20 or newer. As the same user that owns the graphical session, verify that DISPLAY is set, WAYLAND_DISPLAY is empty, and xrandr --query lists a monitor.
+.IP 5. 3
+Clone or copy the reviewed project into the guest and run npm ci, npm run build, and npm test. Do not mount host filesystems, expose the host Docker socket, or copy host credentials and SSH keys.
+.IP 6. 3
+Start MCPO with the same desktop user and graphical environment:
+.PP
+.EX
+mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
+.EE
+.IP 7. 3
+Call computer_environment, computer_screen_size, and computer_screenshot before testing input. Verify that screenshots correspond to the guest display. Browser testing must use screenshots, coordinates, and keyboard only.
+.PP
+The process must have access to the X11 display identified by DISPLAY. Do not use sudo to bypass X11 authorization; configure the service user and environment explicitly instead.
 .SH OPTIONS
 Tool arguments are supplied through MCP. See the README for schemas.
 .SH MCP TOOLS
@@ -15,6 +42,8 @@ computer_screenshot, computer_screen_size, computer_environment, computer_move_m
 DISPLAY must identify an accessible X11 display. WAYLAND_DISPLAY is detected but direct Wayland injection is not implemented. ffmpeg, xdotool, xclip, and xrandr must be available for the corresponding capabilities.
 .SH EXAMPLES
 .B npm install && npm run build && npm start
+.PP
+.B npm ci && npm run build && npm test
 .SH MCPO INTEGRATION
 .B mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 .PP
