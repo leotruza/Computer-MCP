@@ -83,9 +83,20 @@ As coordenadas usam origem `(0,0)` no canto superior esquerdo; x cresce para a d
 
 ### Selenium
 
-`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_cookies` e `browser_screenshot`.
+`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_click`, `browser_type`, `browser_key`, `browser_wait`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_switch_frame`, `browser_default_content`, `browser_cookies`, `browser_storage`, `browser_alert` e `browser_screenshot`.
 
-`browser_start` inicia Firefox visível por padrão. O Selenium Manager pode baixar um driver compatível no primeiro uso, portanto a VM precisa de rede ou de um driver instalado previamente. `profilePath` pode apontar para um perfil dedicado dentro da VM; nunca use um perfil do host. O navegador não é headless por padrão. Screenshots Selenium são do viewport; `computer_screenshot` captura o desktop inteiro.
+`browser_start` inicia Firefox visível por padrão e aceita `headless`, `minimalProfile`, `profilePath` e `binaryPath`. Use headless quando não for necessária inspeção visual; headed continua sendo o padrão para continuidade com GUI. O perfil mínimo desativa telemetria, verificações de atualização, conexões especulativas, algumas atividades de background e animações, preservando JavaScript, cookies, WebAssembly, WebGL, rede e mecanismos de segurança. O Selenium Manager pode baixar um driver compatível no primeiro uso, portanto a VM precisa de rede ou de um driver previamente instalado. `profilePath` deve apontar somente para um perfil dedicado dentro da VM. Screenshots Selenium são do viewport; `computer_screenshot` captura o desktop inteiro.
+
+### Benchmark de navegadores
+
+A escolha do navegador é uma decisão de engenharia, não uma suposição. Execute a mesma carga Selenium contra candidatos Firefox instalados:
+
+```bash
+npm run benchmark:browsers
+BROWSER_CANDIDATES=firefox,firefox-esr npm run benchmark:browsers -- --headless
+```
+
+Os candidatos usam `nome[:caminho-do-binário]`, por exemplo `BROWSER_CANDIDATES=firefox:/usr/bin/firefox,waterfox:/opt/waterfox/waterfox`. O benchmark informa tempo de inicialização, confiabilidade do WebDriver, RAM/CPU idle, RAM/CPU com uma página, duas abas, carga JavaScript e uma amostra de estabilidade de cinco segundos. Use as mesmas condições da VM para cada candidato. O script mede, mas não escolhe automaticamente o vencedor. Só escolha um fork se ele demonstrar menor uso prático mantendo compatibilidade moderna e Selenium; caso contrário, use a melhor opção Firefox/ESR medida.
 
 As camadas Selenium e GUI são complementares: Selenium inspeciona DOM e conteúdo, enquanto GUI opera diálogos nativos e a área de trabalho visível. Ferramentas genéricas de clique/digitação não são duplicadas como ferramentas browser-specific.
 

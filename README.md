@@ -83,9 +83,20 @@ Coordinates use origin `(0,0)` at the top-left; x increases right and y increase
 
 ### Selenium
 
-`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_cookies`, and `browser_screenshot`.
+`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_click`, `browser_type`, `browser_key`, `browser_wait`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_switch_frame`, `browser_default_content`, `browser_cookies`, `browser_storage`, `browser_alert`, and `browser_screenshot`.
 
-`browser_start` defaults to visible Firefox. Selenium Manager may download a compatible driver at first use, so the VM needs network access or a preinstalled driver. `profilePath` may point to a dedicated profile inside the VM; never point it at a host profile. A browser started by this server is not headless by default. Selenium screenshots are browser viewport screenshots; `computer_screenshot` captures the whole desktop.
+`browser_start` defaults to visible Firefox and accepts `headless`, `minimalProfile`, `profilePath`, and `binaryPath`. Headless mode should be used when visual inspection is unnecessary; headed mode remains the default for GUI continuity. The minimal profile disables telemetry, update checks, speculative connections, selected background activity, and animations while preserving JavaScript, cookies, WebAssembly, WebGL, networking, and security mechanisms. Selenium Manager may download a compatible driver at first use, so the VM needs network access or a preinstalled driver. `profilePath` may point to a dedicated profile inside the VM; never point it at a host profile. Selenium screenshots are browser viewport screenshots; `computer_screenshot` captures the whole desktop.
+
+### Browser benchmark
+
+Browser choice is an engineering decision, not an assumption. Run the same Selenium workload against installed Firefox-based candidates:
+
+```bash
+npm run benchmark:browsers
+BROWSER_CANDIDATES=firefox,firefox-esr npm run benchmark:browsers -- --headless
+```
+
+Candidates use `name[:binary-path]`, for example `BROWSER_CANDIDATES=firefox:/usr/bin/firefox,waterfox:/opt/waterfox/waterfox`. The benchmark reports startup time, WebDriver reliability, idle RAM/CPU, one-page RAM/CPU, two-tab RAM/CPU, JavaScript-load RAM/CPU, and a five-second stability sample. It uses the same data-URL workload and should be run under the same VM conditions for each candidate. The script is measurement-only and does not automatically select a winner. Choose a fork only when it demonstrates lower practical resource use while retaining modern-web and Selenium compatibility; otherwise use the best measured Firefox/ESR option.
 
 The Selenium and GUI layers are complementary: Selenium can inspect DOM state and page content, while GUI tools can operate native dialogs and the visible desktop. Generic GUI tools are intentionally not duplicated as browser-specific click/type tools.
 

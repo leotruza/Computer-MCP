@@ -54,9 +54,16 @@ Computer tools: computer_screenshot, computer_screen_size, computer_environment,
 .PP
 Shell/filesystem tools: shell_exec, filesystem_read, filesystem_write, filesystem_list, and filesystem_remove.
 .PP
-Selenium tools: browser_start, browser_stop, browser_navigate, browser_page, browser_find, browser_execute, browser_tabs, browser_switch_window, browser_cookies, and browser_screenshot.
+Selenium tools: browser_start, browser_stop, browser_navigate, browser_page, browser_find, browser_click, browser_type, browser_key, browser_wait, browser_execute, browser_tabs, browser_switch_window, browser_switch_frame, browser_default_content, browser_cookies, browser_storage, browser_alert, and browser_screenshot.
 .SH SELENIUM
-browser_start launches a visible Firefox browser by default using genuine Selenium WebDriver. It does not attach to an existing browser process. Selenium provides navigation, DOM/page inspection, element lookup, JavaScript, tabs/windows, cookies, and browser screenshots. Selenium Manager may download a driver at first use. Use a dedicated profile path inside the VM only.
+browser_start launches a visible Firefox browser by default using genuine Selenium WebDriver. It accepts headless, minimalProfile, profilePath, and binaryPath. The conservative minimal profile disables telemetry, update checks, speculative connections, selected background activity, and animations without disabling JavaScript, cookies, WebAssembly, WebGL, networking, or security. It does not attach to an existing browser process. Selenium provides navigation, DOM/page inspection, element lookup, JavaScript, tabs/windows, cookies, storage, alerts, waits, and browser screenshots. Selenium Manager may download a driver at first use. Use a dedicated profile path inside the VM only.
+.PP
+Compare installed candidates with:
+.EX
+npm run benchmark:browsers
+BROWSER_CANDIDATES=firefox,firefox-esr npm run benchmark:browsers -- --headless
+.EE
+The benchmark uses an identical workload and reports startup time, WebDriver reliability, RAM, CPU, JavaScript-load behavior, and stability. It does not automatically select a browser; choose based on measured resource use and compatibility.
 .SH COMPUTER CONTROL
 The computer layer controls arbitrary X11 applications through screenshots, coordinates, mouse, keyboard, and clipboard. Coordinates use a top-left origin, with x increasing right and y increasing down. Selenium and GUI tools are complementary; GUI remains appropriate for native dialogs and visual controls.
 .SH SHELL AND FILESYSTEM
