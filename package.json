@@ -1,0 +1,20 @@
+{
+  "name": "computer-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for controlling a Linux desktop through screenshots, mouse, keyboard, and clipboard.",
+  "type": "module",
+  "bin": { "computer-mcp": "dist/index.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "node --test --import tsx test/**/*.test.ts",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "repository": { "type": "git", "url": "https://github.com/leotruza/Computer-MCP.git" },
+  "license": "GPL-3.0-only",
+  "engines": { "node": ">=20" },
+  "keywords": ["mcp", "linux", "x11", "gui", "computer-use", "open-webui", "mcpo"],
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.12.1", "zod": "^3.25.67" },
+  "devDependencies": { "@types/node": "^22.15.30", "tsx": "^4.19.4", "typescript": "^5.8.3" }
+}

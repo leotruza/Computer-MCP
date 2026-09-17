@@ -1,0 +1,41 @@
+.TH COMPUTER-MCP 1 "September 2026" "computer-mcp 1.0.0" "User Commands"
+.SH NAME
+computer-mcp \- Linux desktop GUI control MCP server
+.SH SYNOPSIS
+.B computer-mcp
+.br
+.B node dist/index.js
+.SH DESCRIPTION
+Runs an MCP server over standard input/output for X11 desktop screenshots, mouse, keyboard, and clipboard control. The VM is configured manually; no HTTP listener is created.
+.SH OPTIONS
+Tool arguments are supplied through MCP. See the README for schemas.
+.SH MCP TOOLS
+computer_screenshot, computer_screen_size, computer_environment, computer_move_mouse, computer_click, computer_mouse_down, computer_mouse_up, computer_scroll, computer_type, computer_key, computer_hotkey, computer_clipboard_get, and computer_clipboard_set.
+.SH ENVIRONMENT
+DISPLAY must identify an accessible X11 display. WAYLAND_DISPLAY is detected but direct Wayland injection is not implemented. ffmpeg, xdotool, xclip, and xrandr must be available for the corresponding capabilities.
+.SH EXAMPLES
+.B npm install && npm run build && npm start
+.SH MCPO INTEGRATION
+.B mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
+.PP
+MCPO converts the stdio MCP server into OpenAPI-compatible HTTP endpoints for Open WebUI.
+.SH FILES
+.I dist/index.js
+.br
+.I /etc/X11
+.SH EXIT STATUS
+0 on clean shutdown; non-zero when the process or platform operation fails.
+.SH DIAGNOSTICS
+Errors identify the required capability, detected display environment, and a suggested corrective action.
+.SH SECURITY
+The VM is the sandbox. No host filesystem mounts, host commands, hypervisor control, VM escape, host credential extraction, host SSH key access, host Docker socket, or host process control are implemented.
+.SH LIMITATIONS
+Wayland compositor security may prevent capture and input. Browser interaction is GUI-only and does not use browser automation protocols, DOM, or accessibility APIs.
+.SH BUGS
+Report reproducible issues with the display environment, command versions, and MCP request.
+.SH AUTHOR
+Computer-MCP contributors.
+.SH COPYRIGHT
+Copyright (C) 2026 Computer-MCP contributors.
+.SH LICENSE
+GPL-3.0-only. No warranty is provided.
