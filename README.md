@@ -76,7 +76,7 @@ Source is in `src/`; output is in `dist/`. Runtime dependencies are the official
 
 > ## AI-Generated Code Disclaimer
 >
-> This project was generated entirely with the assistance of artificial intelligence. The code, documentation, tests, configuration, and other project materials were produced by AI and may contain errors, security vulnerabilities, incorrect assumptions, or other defects.
+> This project was generated entirely by artificial intelligence. The code, documentation, tests, configuration, and other project materials were produced by AI and may contain errors, security vulnerabilities, incorrect assumptions, or other defects.
 >
 > This project is provided for development, testing, research, and experimentation. Review, test, and audit the code before using it in security-sensitive or production environments.
 >
@@ -84,4 +84,4 @@ Source is in `src/`; output is in `dist/`. Runtime dependencies are the official
 
 > ## Aviso sobre código gerado por IA
 >
-> Este projeto foi gerado inteiramente com auxílio de inteligência artificial. O código, a documentação, os testes, a configuração e os demais materiais podem conter erros, vulnerabilidades, suposições incorretas ou outros defeitos. Revise, teste e audite o projeto antes de usá-lo em ambientes sensíveis ou de produção. Este aviso não substitui a GPL-3.0 nem licenças de terceiros aplicáveis.
+> Este projeto foi gerado inteiramente por inteligência artificial. O código, a documentação, os testes, a configuração e os demais materiais podem conter erros, vulnerabilidades, suposições incorretas ou outros defeitos. Revise, teste e audite o projeto antes de usá-lo em ambientes sensíveis ou de produção. Este aviso não substitui a GPL-3.0 nem licenças de terceiros aplicáveis.
