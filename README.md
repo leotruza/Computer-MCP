@@ -20,7 +20,7 @@ The server runs **inside a manually configured Linux VM**. It does not create, p
 
 ## Requisitos / Requirements
 
-Node.js 20+, graphical X11 session, and `ffmpeg`, `xdotool`, `xclip`, and `xrandr`. On Debian-like systems: `sudo apt install ffmpeg xdotool xclip x11-xserver-utils`. Wayland is detected but not bypassed; use an X11 session for the implemented capabilities.
+Node.js 20+, a logged-in graphical **X11** session, and `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, and curl are required. On Debian-like systems: `sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential`. MCPO is a separate requirement for the HTTP/OpenAPI bridge and is not installed by this project. Wayland is detected but not bypassed; use an X11 session for the implemented capabilities.
 
 ## Configuração manual da VM / Manual VM setup
 
@@ -46,7 +46,7 @@ O projeto não cria nem configura a VM. Execute os passos abaixo dentro da VM, u
    xrandr --query
    ```
 
-   `DISPLAY` deve estar definido, `xrandr --query` deve listar ao menos um monitor e `WAYLAND_DISPLAY` deve estar vazio para o caminho X11. Não execute o processo com `sudo` para contornar autenticação X11; use o mesmo usuário da sessão.
+   `DISPLAY` deve estar definido, `xrandr --query` deve listar ao menos um monitor e `WAYLAND_DISPLAY` deve estar vazio para o caminho X11. O terminal não deve ser apenas uma sessão SSH sem encaminhamento X11. Não execute o processo com `sudo` para contornar autenticação X11; use o mesmo usuário da sessão e confirme que a tela da VM permanece desbloqueada e ativa.
 5. **Copie o projeto para a VM** por Git ou por um artefato revisado. Não monte o filesystem do host, não compartilhe diretórios pessoais, não exponha o socket Docker do host e não copie credenciais ou chaves SSH do host:
 
    ```bash
@@ -77,7 +77,17 @@ chmod +x scripts/setup-vm.sh
 ./scripts/setup-vm.sh
 ```
 
-O script usa `sudo` somente para `apt-get`, executa como o usuário da sessão gráfica e não cria, provisiona, virtualiza nem altera a VM ou o host. Ele instala `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, ferramentas de compilação e, por padrão, `nodejs`/`npm`; exige Node.js 20 ou superior, executa `npm ci`, build, testes e lint, e imprime o comando MCPO. Para apenas verificar o ambiente, use `./scripts/setup-vm.sh --check-only`. Use `--skip-build` para instalar somente os pré-requisitos ou `--skip-node` quando Node.js for administrado por outro método. O script é específico para Debian/Ubuntu; em outra distribuição, instale os pacotes equivalentes manualmente.
+O script usa `sudo` somente para `apt-get`, executa como o usuário da sessão gráfica e não cria, provisiona, virtualiza nem altera a VM ou o host. Ele instala `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, ferramentas de compilação e, por padrão, `nodejs`/`npm`; depois exige Node.js 20 ou superior, executa `npm ci`, build, testes e lint, e imprime o comando MCPO. Como a versão de Node fornecida pelo repositório da distribuição pode ser antiga, instale Node.js 20+ por um método aprovado antes de executar o script ou use `--skip-node`; o script falhará explicitamente se a versão permanecer abaixo de 20. Para apenas verificar o ambiente, use `./scripts/setup-vm.sh --check-only`. Use `--skip-build` para instalar somente os pré-requisitos. O script é específico para Debian/Ubuntu; em outra distribuição, instale os pacotes equivalentes manualmente.
+
+### Validação da VM / VM validation
+
+Para testar a configuração sem instalar pacotes, mover o mouse, clicar, digitar ou alterar o clipboard, execute:
+
+```bash
+./scripts/test-vm.sh
+```
+
+O validador verifica Linux, usuário não-root, `DISPLAY`, ausência de `WAYLAND_DISPLAY`, Node.js 20+, ferramentas Linux, acesso ao monitor via `xrandr`, captura X11 real com FFmpeg, build, testes e descoberta das ferramentas MCP. `MCPO` ausente gera um aviso, pois é instalado separadamente. `./scripts/test-vm.sh --quick` pula build, testes e descoberta. O resultado **READY** significa que os pré-requisitos técnicos foram verificados; ainda é necessário iniciar o MCPO e fazer os testes funcionais de screenshot, mouse, teclado e clipboard.
 
 ## Instalação / Installation
 

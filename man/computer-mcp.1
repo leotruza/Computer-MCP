@@ -40,13 +40,19 @@ For an existing Debian or Ubuntu guest, the repository includes an idempotent he
 chmod +x scripts/setup-vm.sh
 ./scripts/setup-vm.sh
 .EE
-The helper installs guest packages with sudo apt-get, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical desktop user and never creates or modifies a VM or the host. Use --check-only to avoid installation and npm actions, --skip-build to omit the Node build/test phase, or --skip-node when Node.js is managed separately. It requires Node.js 20 or newer and an X11 session for GUI operations.
+The helper installs guest packages with sudo apt-get, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical desktop user and never creates or modifies a VM or the host. The distribution's nodejs package may be older than Node.js 20; install a supported Node.js version separately or use --skip-node. The helper fails explicitly when Node.js 20 or newer is not present. Use --check-only to avoid installation and npm actions, --skip-build to omit the Node build/test phase, or --skip-node when Node.js is managed separately. It requires Node.js 20 or newer and an X11 session for GUI operations.
+.PP
+Validate an already prepared guest without installing packages or changing pointer, keyboard, or clipboard state:
+.EX
+./scripts/test-vm.sh
+.EE
+This validator checks the non-root desktop user, DISPLAY, X11 session, required commands, Node.js version, connected monitors, real FFmpeg X11 capture, project build, automated tests, and MCP discovery. A missing MCPO is reported as a warning because MCPO is installed separately. Use --quick to skip build, tests, and discovery. A READY result still requires the functional MCP screenshot and input checks.
 .SH OPTIONS
 Tool arguments are supplied through MCP. See the README for schemas.
 .SH MCP TOOLS
 computer_screenshot, computer_screen_size, computer_environment, computer_move_mouse, computer_click, computer_mouse_down, computer_mouse_up, computer_scroll, computer_type, computer_key, computer_hotkey, computer_clipboard_get, and computer_clipboard_set.
 .SH ENVIRONMENT
-DISPLAY must identify an accessible X11 display. WAYLAND_DISPLAY is detected but direct Wayland injection is not implemented. ffmpeg, xdotool, xclip, and xrandr must be available for the corresponding capabilities.
+DISPLAY must identify an accessible X11 display in the logged-in desktop session. WAYLAND_DISPLAY must be empty for the implemented path. ffmpeg, xdotool, xclip, xrandr, Git, curl, and Node.js 20 or newer must be available. MCPO is installed separately.
 .SH EXAMPLES
 .B npm install && npm run build && npm start
 .PP
@@ -59,6 +65,8 @@ MCPO converts the stdio MCP server into OpenAPI-compatible HTTP endpoints for Op
 .I dist/index.js
 .br
 .I scripts/setup-vm.sh
+.br
+.I scripts/test-vm.sh
 .br
 .I /etc/X11
 .SH EXIT STATUS
