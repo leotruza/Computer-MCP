@@ -61,7 +61,7 @@ if (( CHECK_ONLY == 0 )); then
   log "Installing guest packages with apt-get (no VM or host changes are performed)."
   sudo -v || die "sudo authentication failed."
   sudo apt-get update
-  packages=(ffmpeg xdotool xclip x11-xserver-utils git curl build-essential)
+  packages=(ffmpeg xdotool xclip x11-xserver-utils git curl build-essential firefox-esr)
   if (( SKIP_NODE == 0 )); then packages+=(nodejs npm); fi
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${packages[@]}"
 fi

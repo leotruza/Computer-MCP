@@ -46,6 +46,7 @@ printf '%s\n' "Computer-MCP VM validation" "Project: $PROJECT_DIR" ""
 [[ -z "${WAYLAND_DISPLAY:-}" ]] && pass_check "Wayland session variable is empty (X11 path)" || fail_check "WAYLAND_DISPLAY is set; this release requires an X11 session"
 
 for tool in node npm ffmpeg xdotool xclip xrandr git; do need "$tool"; done
+if command -v firefox >/dev/null 2>&1; then pass_check "Firefox available: $(command -v firefox)"; elif command -v firefox-esr >/dev/null 2>&1; then pass_check "Firefox available: $(command -v firefox-esr)"; else warn_check "Firefox is not installed; browser_start default Firefox cannot run"; fi
 if command -v node >/dev/null 2>&1; then
   node_major="$(node --version | sed -E 's/^v([0-9]+).*/\1/')"
   [[ "$node_major" =~ ^[0-9]+$ ]] && (( node_major >= 20 )) && pass_check "Node.js 20+: $(node --version)" || fail_check "Node.js 20+ required; found $(node --version)"

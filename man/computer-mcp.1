@@ -1,29 +1,29 @@
 .TH COMPUTER-MCP 1 "September 2026" "computer-mcp 1.0.0" "User Commands"
 .SH NAME
-computer-mcp \- Linux desktop GUI control MCP server
+computer-mcp \- hybrid Linux VM GUI, shell, filesystem, and Selenium MCP server
 .SH SYNOPSIS
 .B computer-mcp
 .br
 .B node dist/index.js
 .SH DESCRIPTION
-Runs an MCP server over standard input/output for X11 desktop screenshots, mouse, keyboard, and clipboard control. The VM is configured manually; no HTTP listener is created.
+Runs an MCP server over standard input/output for a manually configured Linux VM. It exposes complementary X11 desktop control, shell/filesystem operations, and visible Selenium WebDriver browser automation. It does not create a VM, manage a hypervisor, access the host, or create an HTTP listener.
 .SH VM SETUP
 This program does not create, provision, virtualize, or modify a VM. Prepare the guest manually:
 .IP 1. 3
-Install a Linux distribution with a graphical desktop and create a dedicated desktop user. Keep the guest updated and take a snapshot before destructive tests.
+Install a Linux distribution with a graphical desktop and a dedicated desktop user. Keep the guest updated and take a snapshot before destructive tests.
 .IP 2. 3
 Log into an X11 session, such as GNOME on Xorg, Ubuntu on Xorg, or Xfce. Wayland compositor security is not bypassed by this program.
 .IP 3. 3
-Install the required guest packages. On Debian or Ubuntu:
+On Debian or Ubuntu install guest packages:
 .PP
 .EX
 sudo apt update
-sudo apt install ffmpeg xdotool xclip x11-xserver-utils curl git build-essential
+sudo apt install ffmpeg xdotool xclip x11-xserver-utils curl git build-essential nodejs npm firefox-esr
 .EE
 .IP 4. 3
-Install Node.js 20 or newer. As the same user that owns the graphical session, verify that DISPLAY is set, WAYLAND_DISPLAY is empty, and xrandr --query lists a monitor.
+Install Node.js 20 or newer if the distribution package is older. As the same user that owns the graphical session, verify DISPLAY is set, WAYLAND_DISPLAY is empty, and xrandr --query lists a monitor.
 .IP 5. 3
-Clone or copy the reviewed project into the guest and run npm ci, npm run build, and npm test. Do not mount host filesystems, expose the host Docker socket, or copy host credentials and SSH keys.
+Clone the project into the guest and run npm ci, npm run build, and npm test. Do not mount host filesystems, expose the host Docker socket, or copy host credentials, browser profiles, or SSH keys.
 .IP 6. 3
 Start MCPO with the same desktop user and graphical environment:
 .PP
@@ -31,36 +31,46 @@ Start MCPO with the same desktop user and graphical environment:
 mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 .EE
 .IP 7. 3
-Call computer_environment, computer_screen_size, and computer_screenshot before testing input. Verify that screenshots correspond to the guest display. Browser testing must use screenshots, coordinates, and keyboard only.
+Call computer_environment, computer_screen_size, and computer_screenshot before testing input. Start Selenium with browser_start and verify the visible Firefox window. Browser state must remain inside the guest.
 .PP
-The process must have access to the X11 display identified by DISPLAY. Do not use sudo to bypass X11 authorization; configure the service user and environment explicitly instead.
+The process must access the X11 display identified by DISPLAY. Do not use sudo to bypass X11 authorization; configure the service user and environment explicitly.
 .PP
-For an existing Debian or Ubuntu guest, the repository includes an idempotent helper:
+For an existing Debian or Ubuntu guest, use the repository helper:
 .EX
 chmod +x scripts/setup-vm.sh
 ./scripts/setup-vm.sh
 .EE
-The helper installs guest packages with sudo apt-get, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical desktop user and never creates or modifies a VM or the host. The distribution's nodejs package may be older than Node.js 20; install a supported Node.js version separately or use --skip-node. The helper fails explicitly when Node.js 20 or newer is not present. Use --check-only to avoid installation and npm actions, --skip-build to omit the Node build/test phase, or --skip-node when Node.js is managed separately. It requires Node.js 20 or newer and an X11 session for GUI operations.
+The helper installs guest packages, including Firefox, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical user and never creates or modifies a VM or the host. Use --check-only, --skip-build, or --skip-node as appropriate.
 .PP
-Validate an already prepared guest without installing packages or changing pointer, keyboard, or clipboard state:
+Validate without installing packages or changing pointer, keyboard, or clipboard state:
 .EX
 ./scripts/test-vm.sh
 .EE
-This validator checks the non-root desktop user, DISPLAY, X11 session, required commands, Node.js version, connected monitors, real FFmpeg X11 capture, project build, automated tests, and MCP discovery. A missing MCPO is reported as a warning because MCPO is installed separately. Use --quick to skip build, tests, and discovery. A READY result still requires the functional MCP screenshot and input checks.
+This checks the non-root desktop user, DISPLAY, X11, commands, Node.js, Firefox, monitors, FFmpeg capture, build, tests, and MCP discovery. Missing MCPO is a warning because it is installed separately. Use --quick to skip build, tests, and discovery.
 .SH OPTIONS
-Tool arguments are supplied through MCP. See the README for schemas.
+Tool arguments are supplied through MCP. See the README files for schemas.
 .SH MCP TOOLS
-computer_screenshot, computer_screen_size, computer_environment, computer_move_mouse, computer_click, computer_mouse_down, computer_mouse_up, computer_scroll, computer_type, computer_key, computer_hotkey, computer_clipboard_get, and computer_clipboard_set.
-.SH ENVIRONMENT
-DISPLAY must identify an accessible X11 display in the logged-in desktop session. WAYLAND_DISPLAY must be empty for the implemented path. ffmpeg, xdotool, xclip, xrandr, Git, curl, and Node.js 20 or newer must be available. MCPO is installed separately.
-.SH EXAMPLES
-.B npm install && npm run build && npm start
+Computer tools: computer_screenshot, computer_screen_size, computer_environment, computer_move_mouse, computer_click, computer_mouse_down, computer_mouse_up, computer_scroll, computer_type, computer_key, computer_hotkey, computer_clipboard_get, and computer_clipboard_set.
 .PP
+Shell/filesystem tools: shell_exec, filesystem_read, filesystem_write, filesystem_list, and filesystem_remove.
+.PP
+Selenium tools: browser_start, browser_stop, browser_navigate, browser_page, browser_find, browser_execute, browser_tabs, browser_switch_window, browser_cookies, and browser_screenshot.
+.SH SELENIUM
+browser_start launches a visible Firefox browser by default using genuine Selenium WebDriver. It does not attach to an existing browser process. Selenium provides navigation, DOM/page inspection, element lookup, JavaScript, tabs/windows, cookies, and browser screenshots. Selenium Manager may download a driver at first use. Use a dedicated profile path inside the VM only.
+.SH COMPUTER CONTROL
+The computer layer controls arbitrary X11 applications through screenshots, coordinates, mouse, keyboard, and clipboard. Coordinates use a top-left origin, with x increasing right and y increasing down. Selenium and GUI tools are complementary; GUI remains appropriate for native dialogs and visual controls.
+.SH SHELL AND FILESYSTEM
+shell_exec and filesystem tools operate inside the VM as the server user. They intentionally do not provide an artificial filesystem sandbox or host access. Root-level operations require an appropriately authorized VM account.
+.SH ENVIRONMENT
+DISPLAY must identify an accessible X11 display in the logged-in desktop session. WAYLAND_DISPLAY must be empty for the implemented GUI path. ffmpeg, xdotool, xclip, xrandr, Firefox, and Node.js 20 or newer must be available. MCPO is installed separately.
+.SH EXAMPLES
 .B npm ci && npm run build && npm test
+.PP
+.B npm start
 .SH MCPO INTEGRATION
 .B mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 .PP
-MCPO converts the stdio MCP server into OpenAPI-compatible HTTP endpoints for Open WebUI.
+MCPO converts the stdio server into OpenAPI-compatible HTTP endpoints for Open WebUI.
 .SH FILES
 .I dist/index.js
 .br
@@ -68,15 +78,17 @@ MCPO converts the stdio MCP server into OpenAPI-compatible HTTP endpoints for Op
 .br
 .I scripts/test-vm.sh
 .br
+.I README.pt-BR.md
+.br
 .I /etc/X11
 .SH EXIT STATUS
 0 on clean shutdown; non-zero when the process or platform operation fails.
 .SH DIAGNOSTICS
 Errors identify the required capability, detected display environment, and a suggested corrective action.
 .SH SECURITY
-The VM is the sandbox. No host filesystem mounts, host commands, hypervisor control, VM escape, host credential extraction, host SSH key access, host Docker socket, or host process control are implemented.
+The VM is the sandbox. No host filesystem mounts, host commands, hypervisor control, VM escape, host credential extraction, host browser profiles, host SSH keys, host Docker socket, or host process control are implemented. Docker may be used inside the VM only.
 .SH LIMITATIONS
-Wayland compositor security may prevent capture and input. Browser interaction is GUI-only and does not use browser automation protocols, DOM, or accessibility APIs.
+Wayland compositor security may prevent GUI capture and input. Selenium browser startup and driver resolution depend on the installed browser, Selenium Manager, and VM network. Existing browser-process attachment is not implemented or claimed. The project is not a VM security audit.
 .SH BUGS
 Report reproducible issues with the display environment, command versions, and MCP request.
 .SH AUTHOR

@@ -1,154 +1,119 @@
 # Computer-MCP
 
-MCP stdio server for controlling a Linux desktop through screenshots, mouse, keyboard, and clipboard. It treats Firefox, Chromium, terminals, office applications, dialogs, and other programs as ordinary GUI applications. **Browser control is screenshot + coordinates + keyboard only**; this project does not use Playwright, Puppeteer, Selenium, WebDriver, CDP, DOM APIs, extensions, or browser endpoints.
+MCP server for a Linux VM development environment with three complementary layers: generic desktop control, shell/filesystem operations, and genuine Selenium WebDriver browser automation. The VM is created and configured manually by the user; this project does not provision a VM, manage a hypervisor, or access the host.
 
-## Descrição / Description
+## Architecture
 
-O servidor roda **dentro da VM Linux configurada manualmente pelo usuário**. Ele não cria, provisiona, virtualiza nem modifica a VM e não abre um listener HTTP próprio. A interface primária é MCP sobre stdio; o [MCPO](https://github.com/open-webui/mcpo) pode fornecer a ponte OpenAPI/HTTP para o Open WebUI.
+- **Computer control:** screenshots, mouse, keyboard, clipboard, display information, and arbitrary Linux GUI applications.
+- **Shell/filesystem:** commands, files, packages, processes, services, builds, tests, and Docker inside the VM. The project does not impose an artificial filesystem sandbox inside the VM.
+- **Selenium:** visible Firefox by default, with navigation, DOM queries, page text/source, element lookup, JavaScript, tabs/windows, cookies, and browser screenshots.
 
-The server runs **inside a manually configured Linux VM**. It does not create, provision, virtualize, or modify the VM and does not open its own HTTP listener. MCP over stdio is the primary interface; MCPO provides the OpenAPI/HTTP bridge for Open WebUI.
+The layers operate against the same VM. A Selenium-launched visible browser is accessible to the GUI layer, but this project does not claim to attach Selenium to a browser process that it did not start. Use Selenium for ordinary web operations and GUI tools for native dialogs, canvas-like controls, browser permission dialogs, and other desktop applications.
 
-## Status de suporte / Support status
+## Requirements
 
-| Área | Estado |
-|---|---|
-| X11 screenshot/input/clipboard | Implemented; requires `DISPLAY`, `ffmpeg`, `xdotool`, `xclip`, and `xrandr` |
-| Wayland | Detected and reported; no compositor bypass is attempted |
-| Browser automation | GUI-only by design |
-| Multiple monitors | Parsed from `xrandr` when available |
-| HTTP API | Not implemented; use MCPO |
+- Linux guest with a logged-in graphical **X11** session. Wayland is detected but not bypassed by the current GUI implementation.
+- Node.js 20 or newer and npm.
+- `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, and build tools.
+- Firefox installed inside the VM (`firefox-esr` on Debian/Ubuntu is suitable). Chromium is supported where installed and compatible with Selenium Manager.
+- MCPO installed separately when an HTTP/OpenAPI bridge is needed.
 
-## Requisitos / Requirements
-
-Node.js 20+, a logged-in graphical **X11** session, and `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, and curl are required. On Debian-like systems: `sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential`. MCPO is a separate requirement for the HTTP/OpenAPI bridge and is not installed by this project. Wayland is detected but not bypassed; use an X11 session for the implemented capabilities.
-
-## Configuração manual da VM / Manual VM setup
-
-O projeto não cria nem configura a VM. Execute os passos abaixo dentro da VM, usando uma distribuição Linux com ambiente gráfico e um usuário dedicado à sessão. Os nomes das telas variam entre VirtualBox, KVM/QEMU, VMware e Hyper-V, mas os requisitos dentro do convidado são os mesmos.
-
-1. **Crie uma VM isolada**, instale uma distribuição Linux com desktop (por exemplo, Debian ou Ubuntu Desktop), crie um usuário para a sessão gráfica, mantenha o sistema atualizado e faça um snapshot antes de testes destrutivos.
-2. **Escolha uma sessão X11** na tela de login, como “GNOME on Xorg”, “Ubuntu on Xorg” ou uma sessão Xfce/X11. Esta implementação não contorna as políticas de Wayland. A variável `DISPLAY` deve apontar para o servidor X da mesma sessão e do mesmo usuário que executará o MCP.
-3. **Instale as ferramentas dentro da VM**:
-
-   ```bash
-   sudo apt update
-   sudo apt install ffmpeg xdotool xclip x11-xserver-utils curl git build-essential
-   ```
-
-   Em outras distribuições, instale os equivalentes de `ffmpeg`, `xdotool`, `xclip` e `xrandr`. Em Debian/Ubuntu, `x11-xserver-utils` fornece `xrandr`.
-4. **Instale Node.js 20 ou superior** por um método aprovado pela distribuição ou pelo administrador. Confirme que a sessão gráfica está acessível:
-
-   ```bash
-   node --version
-   npm --version
-   echo "$DISPLAY"
-   echo "${WAYLAND_DISPLAY:-unset}"
-   xrandr --query
-   ```
-
-   `DISPLAY` deve estar definido, `xrandr --query` deve listar ao menos um monitor e `WAYLAND_DISPLAY` deve estar vazio para o caminho X11. O terminal não deve ser apenas uma sessão SSH sem encaminhamento X11. Não execute o processo com `sudo` para contornar autenticação X11; use o mesmo usuário da sessão e confirme que a tela da VM permanece desbloqueada e ativa.
-5. **Copie o projeto para a VM** por Git ou por um artefato revisado. Não monte o filesystem do host, não compartilhe diretórios pessoais, não exponha o socket Docker do host e não copie credenciais ou chaves SSH do host:
-
-   ```bash
-   git clone https://github.com/leotruza/Computer-MCP.git
-   cd Computer-MCP
-   npm ci
-   npm run build
-   npm test
-   ```
-6. **Execute pela integração MCPO**, evitando instâncias duplicadas:
-
-   ```bash
-   mcpo --host 127.0.0.1 --port 8084 -- node "$PWD/dist/index.js"
-   ```
-
-   Se MCPO for executado por um serviço separado, configure explicitamente o usuário da sessão, `DISPLAY` e a autorização X11. Mantenha MCPO em `127.0.0.1` quando não houver necessidade de acesso remoto.
-7. **Valide a VM** primeiro com `computer_environment`, depois `computer_screen_size` e `computer_screenshot`. Confirme visualmente que a imagem corresponde à tela da VM. Só depois teste mouse, teclado, clipboard, terminal e aplicações. O teste do Firefox deve usar exclusivamente screenshot, coordenadas e teclado.
-
-This project does not create or configure the VM. Inside the VM, install a Linux desktop, select an X11 session, install `ffmpeg`, `xdotool`, `xclip`, and `xrandr`, install Node.js 20+, clone the project, run `npm ci`, `npm run build`, and verify `DISPLAY`, `xrandr --query`, `computer_environment`, `computer_screen_size`, and `computer_screenshot`. Use the same desktop user for the X11 session and the MCP process. Avoid host filesystem mounts, host credentials, Docker sockets, and broad network exposure. Prefer NAT or another restricted VM network mode and keep MCPO bound to loopback.
-
-### Script de preparação / Setup script
-
-Depois de clonar o projeto dentro de uma VM Debian/Ubuntu já existente e iniciar uma sessão gráfica X11, o script pode automatizar a instalação dos pacotes do convidado e a validação do projeto:
+On Debian/Ubuntu:
 
 ```bash
-cd Computer-MCP
+sudo apt update
+sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential nodejs npm firefox-esr
+```
+
+The distribution's Node.js package may be older than 20. Install a supported Node.js release by an approved method if needed.
+
+## Manual VM setup and validation
+
+Create and isolate the VM manually, install a Linux desktop, log into X11 as a dedicated user, and keep the display session active. Do not mount host filesystems, expose the host Docker socket, copy host credentials, or use the host browser profile. Confirm `DISPLAY` is set and `xrandr --query` lists a monitor. Run the server as the same desktop user; do not use `sudo` to bypass X11 authorization.
+
+The Debian/Ubuntu preparation helper installs guest packages and validates the project without creating or modifying the VM:
+
+```bash
 chmod +x scripts/setup-vm.sh
 ./scripts/setup-vm.sh
 ```
 
-O script usa `sudo` somente para `apt-get`, executa como o usuário da sessão gráfica e não cria, provisiona, virtualiza nem altera a VM ou o host. Ele instala `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, ferramentas de compilação e, por padrão, `nodejs`/`npm`; depois exige Node.js 20 ou superior, executa `npm ci`, build, testes e lint, e imprime o comando MCPO. Como a versão de Node fornecida pelo repositório da distribuição pode ser antiga, instale Node.js 20+ por um método aprovado antes de executar o script ou use `--skip-node`; o script falhará explicitamente se a versão permanecer abaixo de 20. Para apenas verificar o ambiente, use `./scripts/setup-vm.sh --check-only`. Use `--skip-build` para instalar somente os pré-requisitos. O script é específico para Debian/Ubuntu; em outra distribuição, instale os pacotes equivalentes manualmente.
-
-### Validação da VM / VM validation
-
-Para testar a configuração sem instalar pacotes, mover o mouse, clicar, digitar ou alterar o clipboard, execute:
+The non-destructive validator checks the actual X11 display, FFmpeg capture, required commands, build, tests, and MCP discovery. It does not move the mouse, click, type, or change the clipboard:
 
 ```bash
 ./scripts/test-vm.sh
+./scripts/test-vm.sh --quick
 ```
 
-O validador verifica Linux, usuário não-root, `DISPLAY`, ausência de `WAYLAND_DISPLAY`, Node.js 20+, ferramentas Linux, acesso ao monitor via `xrandr`, captura X11 real com FFmpeg, build, testes e descoberta das ferramentas MCP. `MCPO` ausente gera um aviso, pois é instalado separadamente. `./scripts/test-vm.sh --quick` pula build, testes e descoberta. O resultado **READY** significa que os pré-requisitos técnicos foram verificados; ainda é necessário iniciar o MCPO e fazer os testes funcionais de screenshot, mouse, teclado e clipboard.
+A `READY` result verifies technical prerequisites, not the full manual GUI/browser workflow. MCPO is reported as a warning when absent because it is installed separately.
 
-## Instalação / Installation
+## Installation and use
 
 ```bash
-npm install
+npm ci
 npm run build
+npm test
+npm run lint
 npm start
 ```
 
-## MCPO e Open WebUI / MCPO and Open WebUI
+The server uses MCP over stdio. It does not create a custom HTTP API.
 
-MCPO runs this stdio MCP server and exposes generated OpenAPI-compatible HTTP routes. The current documented command form is:
+## MCPO and Open WebUI
+
+MCPO launches this stdio server and exposes generated OpenAPI-compatible routes:
 
 ```bash
 mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 ```
 
-Inspect `http://127.0.0.1:8084/docs`, then add the resulting external OpenAPI tool-server URL in Open WebUI. MCPO, not this project, owns the HTTP layer.
+Inspect `http://127.0.0.1:8084/docs`, then configure that external OpenAPI tool server in Open WebUI. Keep MCPO bound to loopback unless a separately authenticated network design is required.
 
-## Ferramentas MCP / MCP tools
+## MCP tools
+
+### Computer control
 
 `computer_screenshot`, `computer_screen_size`, `computer_environment`, `computer_move_mouse`, `computer_click`, `computer_mouse_down`, `computer_mouse_up`, `computer_scroll`, `computer_type`, `computer_key`, `computer_hotkey`, `computer_clipboard_get`, and `computer_clipboard_set`.
 
-Coordinates use origin `(0,0)` at the top-left; x increases right and y increases down. Use coordinates from the most recent screenshot. Screenshots are returned as MCP image content in PNG or JPEG, in memory, with optional scaling and JPEG quality. No permanent screenshot files are created.
+Coordinates use origin `(0,0)` at the top-left; x increases right and y increases down. Screenshot and input coordinates use the same X11 desktop coordinate space. Screenshots are returned as in-memory MCP image content in PNG or JPEG.
 
-## Browser-only GUI procedure / Procedimento GUI para navegador
+### Shell and filesystem
 
-Take a screenshot, visually identify a control, click its coordinates, type with `computer_type`, press keys with `computer_key`, and take another screenshot. No DOM, accessibility tree, JavaScript injection, browser protocol, or extension is used. Downloads and ordinary applications are likewise operated through GUI actions.
+`shell_exec`, `filesystem_read`, `filesystem_write`, `filesystem_list`, and `filesystem_remove`. These operate inside the VM and intentionally do not provide host access. `shell_exec` runs as the server user; root-level operations require running the server under an appropriately authorized VM account, which should be a deliberate VM configuration decision.
 
-## Timing, errors, and security / Temporização, erros e segurança
+### Selenium
 
-Mouse duration, click interval, typing interval, and screenshot scaling are configurable per call. Errors identify the detected environment, required capability, and suggested action. Hotkey modifiers are released in a `finally` cleanup path. SIGINT, SIGTERM, uncaught exceptions, and unhandled rejections trigger shutdown handling.
+`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_cookies`, and `browser_screenshot`.
 
-The VM is the intended sandbox. Normal GUI actions inside it are intentionally permitted. The project does not implement host filesystem mounts, host command execution, hypervisor control, VM escape functionality, host credential extraction, host SSH-key access, host Docker-socket access, or host process control. Bind MCPO to loopback unless a separate authenticated network design is required.
+`browser_start` defaults to visible Firefox. Selenium Manager may download a compatible driver at first use, so the VM needs network access or a preinstalled driver. `profilePath` may point to a dedicated profile inside the VM; never point it at a host profile. A browser started by this server is not headless by default. Selenium screenshots are browser viewport screenshots; `computer_screenshot` captures the whole desktop.
 
-## Testing / Testes
+The Selenium and GUI layers are complementary: Selenium can inspect DOM state and page content, while GUI tools can operate native dialogs and the visible desktop. Generic GUI tools are intentionally not duplicated as browser-specific click/type tools.
+
+## Browser state and security
+
+Browser profiles, cookies, downloads, storage, cache, and authentication state remain inside the VM. Use a dedicated profile and do not reuse host browser directories. The VM is the isolation boundary. The project does not implement host filesystem access, host command execution, host process control, host SSH-key access, host credentials, host browser profiles, host Docker sockets, hypervisor management, or VM escape mechanisms. Docker may be installed and used inside the VM; never expose the host Docker socket.
+
+## Testing
 
 ```bash
 npm run build
 npm test
 npm run lint
+./scripts/test-vm.sh
 ```
 
-Manual integration: start X11, launch through MCPO, discover tools, capture a screenshot, query dimensions, move/click/type/key/hotkey/scroll, read/write clipboard, open a terminal and Firefox, navigate and interact using only screenshots/mouse/keyboard, download and open a file, close applications, and verify errors when `DISPLAY` is unavailable. Do not use Playwright, Selenium, Puppeteer, CDP, WebDriver, or DOM inspection.
+Manual integration should verify: X11 startup, MCPO launch and discovery, desktop screenshot/dimensions, mouse/keyboard/clipboard, terminal and Firefox GUI use, Selenium visible Firefox startup, navigation, element lookup, page text, forms, tabs/windows, cookies, browser screenshot, switching to GUI interaction with the visible browser, native dialogs, shell commands, builds, and clean shutdown. Selenium and GUI session continuity is only claimed for browsers launched by this server and must be tested in the target VM.
 
-## Limitations / Limitações
+## Dependencies and license
 
-X11 access is subject to session permissions. Wayland compositor policies may block direct capture and input. `xdotool` scrolling uses standard X11 wheel buttons; horizontal scrolling depends on the environment. This repository is not a VM security audit.
+Runtime dependencies are the MCP TypeScript SDK, Zod, and Selenium WebDriver. Linux facilities are invoked directly. Selenium WebDriver is genuine Selenium, not a wrapper around Playwright or Puppeteer. The project is GPL-3.0-only; see [LICENSE](LICENSE). Review third-party package licenses before redistribution.
 
-## Development, licensing / Desenvolvimento, licença
+## AI-generated code disclaimer
 
-Source is in `src/`; output is in `dist/`. Runtime dependencies are the official MCP TypeScript SDK and Zod; Linux facilities are invoked directly. Run `npm run lint` before submitting changes. Licensed GPL-3.0-only; see [LICENSE](LICENSE) and [man/computer-mcp.1](man/computer-mcp.1).
+This project was generated entirely with the assistance of artificial intelligence. The source code, documentation, tests, configuration, and other project materials were produced by AI and may contain errors, security vulnerabilities, incorrect assumptions, or other defects.
 
-> ## AI-Generated Code Disclaimer
->
-> This project was generated entirely by artificial intelligence. The code, documentation, tests, configuration, and other project materials were produced by AI and may contain errors, security vulnerabilities, incorrect assumptions, or other defects.
->
-> This project is provided for development, testing, research, and experimentation. Review, test, and audit the code before using it in security-sensitive or production environments.
->
-> The AI-generation disclaimer does not replace the terms of the GPL-3.0 license or any applicable third-party licenses.
+This project is intended for development, testing, research, and experimentation. Review, test, and audit the project before using it in security-sensitive or production environments. This disclaimer does not replace the GPL-3.0-only license or applicable third-party licenses.
 
-> ## Aviso sobre código gerado por IA
->
-> Este projeto foi gerado inteiramente por inteligência artificial. O código, a documentação, os testes, a configuração e os demais materiais podem conter erros, vulnerabilidades, suposições incorretas ou outros defeitos. Revise, teste e audite o projeto antes de usá-lo em ambientes sensíveis ou de produção. Este aviso não substitui a GPL-3.0 nem licenças de terceiros aplicáveis.
+## Limitations
+
+The GUI layer currently targets X11. Wayland compositor security may prevent direct capture and input. Selenium browser startup and driver resolution depend on the installed browser, Selenium Manager, and VM network configuration. Existing browser-process attachment is not implemented or claimed. The project is not a VM security audit.
