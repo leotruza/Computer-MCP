@@ -41,6 +41,20 @@ chmod +x scripts/setup-vm.sh
 ./scripts/setup-vm.sh
 .EE
 The helper installs guest packages, including Firefox, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical user and never creates or modifies a VM or the host. Use --check-only, --skip-build, or --skip-node as appropriate.
+.SH PACKAGES
+On Debian or Ubuntu, setup-vm.sh runs apt-get update and installs these exact packages: ffmpeg, xdotool, xclip, x11-xserver-utils, git, curl, build-essential, firefox-esr, nodejs, and npm. The package manager also installs their dependencies. It does not install MCPO, a desktop environment, Docker, Selenium as a separate system package, a hypervisor, or VM software. Node.js is checked for version 20 or newer after installation.
+.PP
+The helper is apt-specific and stops when apt-get is unavailable. Functional equivalents for manual installation on other distributions are:
+.IP "Fedora/RHEL-like" 4
+dnf install ffmpeg-free xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm. Full FFmpeg codecs may require an approved multimedia repository.
+.IP "Arch/Manjaro" 4
+pacman -S --needed ffmpeg xdotool xclip xorg-xrandr git curl base-devel firefox nodejs npm.
+.IP "openSUSE" 4
+zypper install ffmpeg xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm.
+.IP "Alpine" 4
+apk add ffmpeg xdotool xclip xrandr git curl build-base firefox nodejs npm. Verify browser and Selenium Manager compatibility with the selected musl-based desktop image.
+.PP
+Package names and repositories change. Confirm them with the target distribution before installation, then run npm ci, npm run build, npm test, and npm run lint. These commands install guest packages only.
 .PP
 Validate without installing packages or changing pointer, keyboard, or clipboard state:
 .EX

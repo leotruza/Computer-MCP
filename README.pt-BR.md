@@ -25,6 +25,34 @@ sudo apt update
 sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential nodejs npm firefox-esr
 ```
 
+### Pacotes instalados pelo `setup-vm.sh`
+
+O helper é implementado atualmente para Debian/Ubuntu e instala estes pacotes APT exatos, além das dependências:
+
+| Capacidade | Pacotes instalados pelo script |
+|---|---|
+| Screenshot do desktop | `ffmpeg` |
+| Mouse e teclado X11 | `xdotool` |
+| Clipboard X11 | `xclip` |
+| Descoberta de monitores | `x11-xserver-utils` (`xrandr`) |
+| Checkout e diagnósticos | `git`, `curl` |
+| Builds nativos e módulos Node | `build-essential` |
+| Navegador | `firefox-esr` |
+| Runtime JavaScript | `nodejs`, `npm` |
+
+O script também executa `apt-get update`; ele não instala MCPO, Selenium separadamente, hipervisor, Docker nem ambiente desktop. O Node.js da distribuição pode ser mais antigo que a versão 20 exigida, portanto o script verifica a versão e falha explicitamente em vez de aceitar um runtime incompatível.
+
+O próprio script termina quando `apt-get` não está disponível. Em outras distribuições, instale manualmente os equivalentes funcionais e depois execute `npm ci`, `npm run build`, `npm test` e `npm run lint` (ou use `scripts/test-vm.sh`):
+
+| Distribuição | Comando equivalente | Observações |
+|---|---|---|
+| Fedora/RHEL-like | `sudo dnf install ffmpeg-free xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Suporte completo a codecs FFmpeg pode exigir o repositório multimídia aprovado pela distribuição; a disponibilidade varia entre Fedora e derivados RHEL. |
+| Arch/Manjaro | `sudo pacman -S --needed ffmpeg xdotool xclip xorg-xrandr git curl base-devel firefox nodejs npm` | `base-devel` equivale às ferramentas de build. |
+| openSUSE | `sudo zypper install ffmpeg xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Codecs podem depender dos repositórios openSUSE habilitados. |
+| Alpine | `sudo apk add ffmpeg xdotool xclip xrandr git curl build-base firefox nodejs npm` | Alpine usa musl; confirme que navegador e Selenium Manager funcionam na imagem desktop escolhida. |
+
+Nomes e repositórios podem mudar. Confirme cada pacote com o gerenciador da distribuição antes de instalar. Esses comandos instalam somente pacotes do convidado; não criam nem configuram a VM.
+
 O pacote Node.js da distribuição pode ser mais antigo que a versão 20. Instale uma versão compatível por um método aprovado quando necessário.
 
 ## Configuração manual e validação da VM

@@ -25,6 +25,34 @@ sudo apt update
 sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential nodejs npm firefox-esr
 ```
 
+### Packages installed by `setup-vm.sh`
+
+The helper is currently implemented for Debian/Ubuntu and installs these exact APT packages (plus their dependencies):
+
+| Capability | Packages installed by the script |
+|---|---|
+| Desktop screenshot | `ffmpeg` |
+| X11 mouse and keyboard | `xdotool` |
+| X11 clipboard | `xclip` |
+| Monitor discovery | `x11-xserver-utils` (`xrandr`) |
+| Source checkout and diagnostics | `git`, `curl` |
+| Native builds and Node modules | `build-essential` |
+| Browser | `firefox-esr` |
+| JavaScript runtime | `nodejs`, `npm` |
+
+The script also runs `apt-get update`; it does not install MCPO, Selenium separately, a hypervisor, Docker, or a desktop environment. Node.js supplied by the distribution may be older than the required 20.x release, so the script checks the version and fails rather than silently accepting an unsupported runtime.
+
+The script itself stops when `apt-get` is unavailable. For other distributions, install the functional equivalents manually, then run `npm ci`, `npm run build`, `npm test`, and `npm run lint` (or use `scripts/test-vm.sh`):
+
+| Distribution | Equivalent package command | Notes |
+|---|---|---|
+| Fedora/RHEL-like | `sudo dnf install ffmpeg-free xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Full FFmpeg codec support may require the distribution's approved multimedia repository; package availability differs between Fedora and RHEL derivatives. |
+| Arch/Manjaro | `sudo pacman -S --needed ffmpeg xdotool xclip xorg-xrandr git curl base-devel firefox nodejs npm` | `base-devel` is the build-tools equivalent. |
+| openSUSE | `sudo zypper install ffmpeg xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Codec availability can depend on the enabled openSUSE repositories. |
+| Alpine | `sudo apk add ffmpeg xdotool xclip xrandr git curl build-base firefox nodejs npm` | Alpine uses musl; verify the browser and Selenium Manager work in the chosen desktop image. |
+
+Package names and repositories can change. Confirm each package with the target distribution's package manager before installation. These commands install guest packages only; they do not create or configure the VM.
+
 The distribution's Node.js package may be older than 20. Install a supported Node.js release by an approved method if needed.
 
 ## Manual VM setup and validation
