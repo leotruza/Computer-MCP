@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { shellExec, readFile, writeFile, listDirectory, removePath } from "../src/platform/shell.js";
 
-test("shell execution returns stdout and exit code", async () => {
+test("shell execution returns stdout and exit code", { skip: process.platform !== "linux" }, async () => {
   const result = await shellExec("printf 'vm-shell-test'");
   assert.equal(result.stdout, "vm-shell-test");
   assert.equal(result.exitCode, 0);

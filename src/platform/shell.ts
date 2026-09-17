@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { spawn } from "node:child_process";
 
 export async function shellExec(command: string, cwd?: string, timeout = 30000): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  if (process.platform !== "linux") throw new Error(`shell_exec requires a Linux VM. Detected platform: ${process.platform}. This project does not provide a Windows shell or implicit WSL fallback.`);
   return await new Promise((resolve, reject) => {
     const child = spawn("bash", ["-lc", command], { cwd, env: process.env, stdio: ["ignore", "pipe", "pipe"] });
     const stdout: Buffer[] = []; const stderr: Buffer[] = [];
