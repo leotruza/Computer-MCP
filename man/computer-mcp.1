@@ -34,6 +34,13 @@ mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/in
 Call computer_environment, computer_screen_size, and computer_screenshot before testing input. Verify that screenshots correspond to the guest display. Browser testing must use screenshots, coordinates, and keyboard only.
 .PP
 The process must have access to the X11 display identified by DISPLAY. Do not use sudo to bypass X11 authorization; configure the service user and environment explicitly instead.
+.PP
+For an existing Debian or Ubuntu guest, the repository includes an idempotent helper:
+.EX
+chmod +x scripts/setup-vm.sh
+./scripts/setup-vm.sh
+.EE
+The helper installs guest packages with sudo apt-get, checks the graphical environment, runs npm ci, build, tests, and lint, and prints the MCPO command. It runs as the graphical desktop user and never creates or modifies a VM or the host. Use --check-only to avoid installation and npm actions, --skip-build to omit the Node build/test phase, or --skip-node when Node.js is managed separately. It requires Node.js 20 or newer and an X11 session for GUI operations.
 .SH OPTIONS
 Tool arguments are supplied through MCP. See the README for schemas.
 .SH MCP TOOLS
@@ -50,6 +57,8 @@ DISPLAY must identify an accessible X11 display. WAYLAND_DISPLAY is detected but
 MCPO converts the stdio MCP server into OpenAPI-compatible HTTP endpoints for Open WebUI.
 .SH FILES
 .I dist/index.js
+.br
+.I scripts/setup-vm.sh
 .br
 .I /etc/X11
 .SH EXIT STATUS

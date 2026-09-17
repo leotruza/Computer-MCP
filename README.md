@@ -67,6 +67,18 @@ O projeto não cria nem configura a VM. Execute os passos abaixo dentro da VM, u
 
 This project does not create or configure the VM. Inside the VM, install a Linux desktop, select an X11 session, install `ffmpeg`, `xdotool`, `xclip`, and `xrandr`, install Node.js 20+, clone the project, run `npm ci`, `npm run build`, and verify `DISPLAY`, `xrandr --query`, `computer_environment`, `computer_screen_size`, and `computer_screenshot`. Use the same desktop user for the X11 session and the MCP process. Avoid host filesystem mounts, host credentials, Docker sockets, and broad network exposure. Prefer NAT or another restricted VM network mode and keep MCPO bound to loopback.
 
+### Script de preparação / Setup script
+
+Depois de clonar o projeto dentro de uma VM Debian/Ubuntu já existente e iniciar uma sessão gráfica X11, o script pode automatizar a instalação dos pacotes do convidado e a validação do projeto:
+
+```bash
+cd Computer-MCP
+chmod +x scripts/setup-vm.sh
+./scripts/setup-vm.sh
+```
+
+O script usa `sudo` somente para `apt-get`, executa como o usuário da sessão gráfica e não cria, provisiona, virtualiza nem altera a VM ou o host. Ele instala `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, ferramentas de compilação e, por padrão, `nodejs`/`npm`; exige Node.js 20 ou superior, executa `npm ci`, build, testes e lint, e imprime o comando MCPO. Para apenas verificar o ambiente, use `./scripts/setup-vm.sh --check-only`. Use `--skip-build` para instalar somente os pré-requisitos ou `--skip-node` quando Node.js for administrado por outro método. O script é específico para Debian/Ubuntu; em outra distribuição, instale os pacotes equivalentes manualmente.
+
 ## Instalação / Installation
 
 ```bash
