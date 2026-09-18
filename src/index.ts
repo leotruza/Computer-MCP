@@ -9,9 +9,14 @@ import * as mouse from "./platform/mouse.js";
 import * as keyboard from "./platform/keyboard.js";
 import * as shell from "./platform/shell.js";
 import * as selenium from "./platform/selenium.js";
+import { remoteOptionsFromArgs, remoteOptionsFromEnvironment, startRemoteProxy } from "./platform/remote-proxy.js";
 
+const remoteOptions = remoteOptionsFromArgs() ?? remoteOptionsFromEnvironment();
+if (remoteOptions) {
+  await startRemoteProxy(remoteOptions);
+}
 if (process.platform !== "linux") {
-  console.error(`computer-mcp requires a Linux VM; detected ${process.platform}. Run this server inside the documented Linux guest. Windows host execution and implicit WSL fallback are not supported.`);
+  console.error(`computer-mcp requires a Linux VM runtime; detected ${process.platform}. Set COMPUTER_MCP_SSH_TARGET=user@vm and run the Linux guest command through OpenSSH.`);
   process.exit(1);
 }
 

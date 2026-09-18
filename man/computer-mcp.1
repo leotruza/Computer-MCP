@@ -101,6 +101,10 @@ npm run build
 mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 .EE
 The program exits explicitly on non-Linux platforms and never falls back to WSL. If MCPO reports "McpError: Connection closed", run node dist/index.js directly in the Linux guest and inspect stderr. A missing or stale dist/index.js, unsupported platform, or failed Node startup is presented by MCPO as a closed stdio connection.
+.SH REMOTE LINUX GUEST
+The MCP client may run on Windows or another host while the tools execute in a Linux VM over OpenSSH. Set COMPUTER_MCP_SSH_TARGET=user@guest, optionally COMPUTER_MCP_SSH_PORT, COMPUTER_MCP_SSH_IDENTITY, COMPUTER_MCP_SSH_KNOWN_HOSTS, COMPUTER_MCP_SSH_BIN, and COMPUTER_MCP_REMOTE_COMMAND. The default remote command is node /opt/computer-mcp/dist/index.js. The local process only proxies stdio; the guest must contain the built project and an active X11 session. Without COMPUTER_MCP_SSH_TARGET, non-Linux execution fails explicitly rather than falling back to WSL.
+.PP
+The same mode is available through command-line arguments: --remote-target user@guest, --remote-port PORT, --remote-identity FILE, --remote-known-hosts FILE, and --remote-command COMMAND. SSH is the supported transport. The host process does not execute GUI, shell, filesystem, or browser operations when remote mode is active.
 .SH FILES
 .I dist/index.js
 .br

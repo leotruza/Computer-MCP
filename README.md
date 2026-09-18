@@ -87,6 +87,36 @@ npm start
 
 The server uses MCP over stdio. It does not create a custom HTTP API.
 
+## Running the MCP client on Windows or another host
+
+The MCP process may run on Windows while all computer, shell, filesystem, and browser operations execute inside a Linux VM. Set `COMPUTER_MCP_SSH_TARGET` and the optional SSH variables; the local process then proxies its stdio stream to the Linux guest and does not execute tools on the host:
+
+PowerShell:
+
+```powershell
+$env:COMPUTER_MCP_SSH_TARGET = "vmuser@192.168.122.50"
+$env:COMPUTER_MCP_SSH_PORT = "22"
+$env:COMPUTER_MCP_SSH_IDENTITY = "C:\Users\me\.ssh\computer-vm"
+$env:COMPUTER_MCP_REMOTE_COMMAND = "node /opt/computer-mcp/dist/index.js"
+mcpo --host 127.0.0.1 --port 8084 -- node C:\path\to\Computer-MCP\dist\index.js
+```
+
+The same configuration can be passed directly to the host MCP process, which is useful when MCPO or Open WebUI launches it:
+
+```powershell
+mcpo --host 127.0.0.1 --port 8084 -- node C:\path\to\Computer-MCP\dist\index.js --remote-target vmuser@192.168.122.50 --remote-port 22 --remote-identity C:\Users\me\.ssh\computer-vm --remote-command "node /opt/computer-mcp/dist/index.js"
+```
+
+On a Linux host the equivalent is:
+
+```bash
+node dist/index.js --remote-target vmuser@192.168.122.50 --remote-command 'node /opt/computer-mcp/dist/index.js'
+```
+
+The host process is only an MCP stdio transport proxy in this mode. MCP requests and responses cross the SSH channel; GUI, shell, filesystem, Selenium, X11, credentials, and browser state remain in the guest. SSH is the supported transport because it provides encrypted transport and host-key authentication; adding a second custom protocol would duplicate these security and lifecycle responsibilities.
+
+The Linux guest must already contain the built project, have its X11 session active, and accept the configured SSH key. `COMPUTER_MCP_SSH_KNOWN_HOSTS` can point to a dedicated known-hosts file. OpenSSH must be available on the host; set `COMPUTER_MCP_SSH_BIN` when it is installed at a non-standard path. Without `COMPUTER_MCP_SSH_TARGET`, non-Linux execution fails explicitly rather than falling back to WSL. On a Linux host, omit the SSH variables to run locally, or set them to use the same remote mode.
+
 ## MCPO and Open WebUI
 
 MCPO launches this stdio server and exposes generated OpenAPI-compatible routes:
