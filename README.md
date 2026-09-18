@@ -1,95 +1,40 @@
-# Computer-MCP
+# Computer-MCP Host Proxy
 
-MCP server for a Linux VM development environment with three complementary layers: generic desktop control, shell/filesystem operations, and genuine Selenium WebDriver browser automation. The VM is created and configured manually by the user; this project does not provision a VM, manage a hypervisor, or access the host.
+Host-side MCP stdio proxy for a Linux guest runtime. The host process may run on Windows or Linux; it forwards MCP traffic over OpenSSH to [`Computer-MCP-Backend`](https://github.com/leotruza/Computer-MCP-Backend), which executes GUI, shell/filesystem, Selenium, X11, and browser operations inside the Linux VM.
 
 ## Architecture
 
-- **Computer control:** screenshots, mouse, keyboard, clipboard, display information, and arbitrary Linux GUI applications.
-- **Shell/filesystem:** commands, files, packages, processes, services, builds, tests, and Docker inside the VM. The project does not impose an artificial filesystem sandbox inside the VM.
-- **Selenium:** visible Firefox by default, with navigation, DOM queries, page text/source, element lookup, JavaScript, tabs/windows, cookies, and browser screenshots.
-
-The layers operate against the same VM. A Selenium-launched visible browser is accessible to the GUI layer, but this project does not claim to attach Selenium to a browser process that it did not start. Use Selenium for ordinary web operations and GUI tools for native dialogs, canvas-like controls, browser permission dialogs, and other desktop applications.
-
-## Requirements
-
-- Linux guest with a logged-in graphical **X11** session. Wayland is detected but not bypassed by the current GUI implementation.
-- Node.js 20 or newer and npm.
-- `ffmpeg`, `xdotool`, `xclip`, `xrandr`, Git, curl, and build tools.
-- Firefox installed inside the VM (`firefox-esr` on Debian/Ubuntu is suitable). Chromium is supported where installed and compatible with Selenium Manager.
-- MCPO installed separately when an HTTP/OpenAPI bridge is needed.
-
-On Debian/Ubuntu:
-
-```bash
-sudo apt update
-sudo apt install ffmpeg xdotool xclip x11-xserver-utils git curl build-essential nodejs npm firefox-esr
+```text
+Open WebUI / MCPO -> Computer-MCP on host -> SSH stdio -> Computer-MCP-Backend in Linux VM
 ```
 
-### Packages installed by `setup-vm.sh`
+The host repository intentionally contains no GUI, X11, shell, filesystem, or Selenium implementation. The guest implementation lives in the Backend repository. SSH is the supported transport, using the host's OpenSSH client and guest host-key authentication.
 
-The helper is currently implemented for Debian/Ubuntu and installs these exact APT packages (plus their dependencies):
-
-| Capability | Packages installed by the script |
-|---|---|
-| Desktop screenshot | `ffmpeg` |
-| X11 mouse and keyboard | `xdotool` |
-| X11 clipboard | `xclip` |
-| Monitor discovery | `x11-xserver-utils` (`xrandr`) |
-| Source checkout and diagnostics | `git`, `curl` |
-| Native builds and Node modules | `build-essential` |
-| Browser | `firefox-esr` |
-| JavaScript runtime | `nodejs`, `npm` |
-
-The script also runs `apt-get update`; it does not install MCPO, Selenium separately, a hypervisor, Docker, or a desktop environment. Node.js supplied by the distribution may be older than the required 20.x release, so the script checks the version and fails rather than silently accepting an unsupported runtime.
-
-The script itself stops when `apt-get` is unavailable. For other distributions, install the functional equivalents manually, then run `npm ci`, `npm run build`, `npm test`, and `npm run lint` (or use `scripts/test-vm.sh`):
-
-| Distribution | Equivalent package command | Notes |
-|---|---|---|
-| Fedora/RHEL-like | `sudo dnf install ffmpeg-free xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Full FFmpeg codec support may require the distribution's approved multimedia repository; package availability differs between Fedora and RHEL derivatives. |
-| Arch/Manjaro | `sudo pacman -S --needed ffmpeg xdotool xclip xorg-xrandr git curl base-devel firefox nodejs npm` | `base-devel` is the build-tools equivalent. |
-| openSUSE | `sudo zypper install ffmpeg xdotool xclip xrandr git curl gcc gcc-c++ make firefox nodejs npm` | Codec availability can depend on the enabled openSUSE repositories. |
-| Alpine | `sudo apk add ffmpeg xdotool xclip xrandr git curl build-base firefox nodejs npm` | Alpine uses musl; verify the browser and Selenium Manager work in the chosen desktop image. |
-
-Package names and repositories can change. Confirm each package with the target distribution's package manager before installation. These commands install guest packages only; they do not create or configure the VM.
-
-The distribution's Node.js package may be older than 20. Install a supported Node.js release by an approved method if needed.
-
-## Manual VM setup and validation
-
-Create and isolate the VM manually, install a Linux desktop, log into X11 as a dedicated user, and keep the display session active. Do not mount host filesystems, expose the host Docker socket, copy host credentials, or use the host browser profile. Confirm `DISPLAY` is set and `xrandr --query` lists a monitor. Run the server as the same desktop user; do not use `sudo` to bypass X11 authorization.
-
-The Debian/Ubuntu preparation helper installs guest packages and validates the project without creating or modifying the VM:
-
-```bash
-chmod +x scripts/setup-vm.sh
-./scripts/setup-vm.sh
-```
-
-The non-destructive validator checks the actual X11 display, FFmpeg capture, required commands, build, tests, and MCP discovery. It does not move the mouse, click, type, or change the clipboard:
-
-```bash
-./scripts/test-vm.sh
-./scripts/test-vm.sh --quick
-```
-
-A `READY` result verifies technical prerequisites, not the full manual GUI/browser workflow. MCPO is reported as a warning when absent because it is installed separately.
-
-## Installation and use
+## Host installation
 
 ```bash
 npm ci
 npm run build
 npm test
-npm run lint
-npm start
 ```
 
-The server uses MCP over stdio. It does not create a custom HTTP API.
+On Windows, use PowerShell and ensure OpenSSH client, Node.js 20+, and MCPO are installed. On Linux, use the distribution's OpenSSH client and Node.js 20+.
 
-## Running the MCP client on Windows or another host
+## Linux guest setup
 
-The MCP process may run on Windows while all computer, shell, filesystem, and browser operations execute inside a Linux VM. Set `COMPUTER_MCP_SSH_TARGET` and the optional SSH variables; the local process then proxies its stdio stream to the Linux guest and does not execute tools on the host:
+Clone and build the Backend inside the VM:
+
+```bash
+git clone https://github.com/leotruza/Computer-MCP-Backend.git /opt/computer-mcp-backend
+cd /opt/computer-mcp-backend
+./scripts/setup-vm.sh
+npm ci
+npm run build
+```
+
+The guest must have a logged-in X11 session, the required GUI packages, Firefox, and an SSH server accepting the host's key. See the Backend README for package lists, VM preparation, Selenium, and validation.
+
+## Running through SSH
 
 PowerShell:
 
@@ -97,105 +42,48 @@ PowerShell:
 $env:COMPUTER_MCP_SSH_TARGET = "vmuser@192.168.122.50"
 $env:COMPUTER_MCP_SSH_PORT = "22"
 $env:COMPUTER_MCP_SSH_IDENTITY = "C:\Users\me\.ssh\computer-vm"
-$env:COMPUTER_MCP_REMOTE_COMMAND = "node /opt/computer-mcp/dist/index.js"
+$env:COMPUTER_MCP_REMOTE_COMMAND = "node /opt/computer-mcp-backend/dist/index.js"
 mcpo --host 127.0.0.1 --port 8084 -- node C:\path\to\Computer-MCP\dist\index.js
 ```
 
-The same configuration can be passed directly to the host MCP process, which is useful when MCPO or Open WebUI launches it:
+Equivalent CLI configuration:
 
 ```powershell
-mcpo --host 127.0.0.1 --port 8084 -- node C:\path\to\Computer-MCP\dist\index.js --remote-target vmuser@192.168.122.50 --remote-port 22 --remote-identity C:\Users\me\.ssh\computer-vm --remote-command "node /opt/computer-mcp/dist/index.js"
+mcpo --host 127.0.0.1 --port 8084 -- node C:\path\to\Computer-MCP\dist\index.js --remote-target vmuser@192.168.122.50 --remote-port 22 --remote-identity C:\Users\me\.ssh\computer-vm --remote-command "node /opt/computer-mcp-backend/dist/index.js"
 ```
 
-On a Linux host the equivalent is:
+Linux host:
 
 ```bash
-node dist/index.js --remote-target vmuser@192.168.122.50 --remote-command 'node /opt/computer-mcp/dist/index.js'
+node dist/index.js --remote-target vmuser@192.168.122.50 --remote-command 'node /opt/computer-mcp-backend/dist/index.js'
 ```
 
-The host process is only an MCP stdio transport proxy in this mode. MCP requests and responses cross the SSH channel; GUI, shell, filesystem, Selenium, X11, credentials, and browser state remain in the guest. SSH is the supported transport because it provides encrypted transport and host-key authentication; adding a second custom protocol would duplicate these security and lifecycle responsibilities.
+## Configuration
 
-The Linux guest must already contain the built project, have its X11 session active, and accept the configured SSH key. `COMPUTER_MCP_SSH_KNOWN_HOSTS` can point to a dedicated known-hosts file. OpenSSH must be available on the host; set `COMPUTER_MCP_SSH_BIN` when it is installed at a non-standard path. Without `COMPUTER_MCP_SSH_TARGET`, non-Linux execution fails explicitly rather than falling back to WSL. On a Linux host, omit the SSH variables to run locally, or set them to use the same remote mode.
+Environment variables:
 
-## MCPO and Open WebUI
+- `COMPUTER_MCP_SSH_TARGET` — required in remote mode, for example `vmuser@192.168.122.50`.
+- `COMPUTER_MCP_SSH_PORT` — optional SSH port.
+- `COMPUTER_MCP_SSH_IDENTITY` — optional private key path.
+- `COMPUTER_MCP_SSH_KNOWN_HOSTS` — optional dedicated known-hosts file.
+- `COMPUTER_MCP_SSH_BIN` — optional OpenSSH executable path.
+- `COMPUTER_MCP_REMOTE_COMMAND` — guest command; defaults to `node /opt/computer-mcp-backend/dist/index.js`.
 
-MCPO launches this stdio server and exposes generated OpenAPI-compatible routes:
+CLI equivalents are `--remote-target`, `--remote-port`, `--remote-identity`, `--remote-known-hosts`, and `--remote-command`.
 
-```bash
-mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
-```
+The host is only a transparent MCP stdio proxy. No tool execution, credentials, browser state, X11 access, or host filesystem access is provided by this repository. If SSH fails, the proxy forwards the failure through stderr and exits; verify the guest command directly with SSH.
 
-Inspect `http://127.0.0.1:8084/docs`, then configure that external OpenAPI tool server in Open WebUI. Keep MCPO bound to loopback unless a separately authenticated network design is required.
-
-### MCPO troubleshooting
-
-The command after `--` must be the compiled server inside the Linux guest. After pulling a new commit, rebuild before starting MCPO:
-
-```bash
-git pull --ff-only origin main
-npm ci
-npm run build
-mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
-```
-
-Do not point MCPO at `C:\Program Files\nodejs\node.exe` or a Windows checkout. This server intentionally exits with an explicit Linux-only error on Windows and does not fall back to WSL. If MCPO reports `McpError: Connection closed`, run `node dist/index.js` directly in the Linux VM, confirm the build succeeded, and inspect stderr before retrying MCPO. A missing or stale `dist/index.js`, an unsupported host platform, or a failed Node startup will all appear to MCPO as a closed stdio connection.
-
-## MCP tools
-
-### Computer control
-
-`computer_screenshot`, `computer_screen_size`, `computer_environment`, `computer_move_mouse`, `computer_click`, `computer_mouse_down`, `computer_mouse_up`, `computer_scroll`, `computer_type`, `computer_key`, `computer_hotkey`, `computer_clipboard_get`, and `computer_clipboard_set`.
-
-Coordinates use origin `(0,0)` at the top-left; x increases right and y increases down. Screenshot and input coordinates use the same X11 desktop coordinate space. Screenshots are returned as in-memory MCP image content in PNG or JPEG.
-
-### Shell and filesystem
-
-`shell_exec`, `filesystem_read`, `filesystem_write`, `filesystem_list`, and `filesystem_remove`. These operate inside the VM and intentionally do not provide host access. `shell_exec` runs as the server user; root-level operations require running the server under an appropriately authorized VM account, which should be a deliberate VM configuration decision.
-
-### Selenium
-
-`browser_start`, `browser_stop`, `browser_navigate`, `browser_page`, `browser_find`, `browser_click`, `browser_type`, `browser_key`, `browser_wait`, `browser_execute`, `browser_tabs`, `browser_switch_window`, `browser_switch_frame`, `browser_default_content`, `browser_cookies`, `browser_storage`, `browser_alert`, and `browser_screenshot`.
-
-`browser_start` defaults to visible Firefox and accepts `headless`, `minimalProfile`, `profilePath`, and `binaryPath`. Headless mode should be used when visual inspection is unnecessary; headed mode remains the default for GUI continuity. The minimal profile disables telemetry, update checks, speculative connections, selected background activity, and animations while preserving JavaScript, cookies, WebAssembly, WebGL, networking, and security mechanisms. Selenium Manager may download a compatible driver at first use, so the VM needs network access or a preinstalled driver. `profilePath` may point to a dedicated profile inside the VM; never point it at a host profile. Selenium screenshots are browser viewport screenshots; `computer_screenshot` captures the whole desktop.
-
-### Browser benchmark
-
-Browser choice is an engineering decision, not an assumption. Run the same Selenium workload against installed Firefox-based candidates:
-
-```bash
-npm run benchmark:browsers
-BROWSER_CANDIDATES=firefox,firefox-esr npm run benchmark:browsers -- --headless
-```
-
-Candidates use `name[:binary-path]`, for example `BROWSER_CANDIDATES=firefox:/usr/bin/firefox,waterfox:/opt/waterfox/waterfox`. The benchmark reports startup time, WebDriver reliability, idle RAM/CPU, one-page RAM/CPU, two-tab RAM/CPU, JavaScript-load RAM/CPU, and a five-second stability sample. It uses the same data-URL workload and should be run under the same VM conditions for each candidate. The script is measurement-only and does not automatically select a winner. Choose a fork only when it demonstrates lower practical resource use while retaining modern-web and Selenium compatibility; otherwise use the best measured Firefox/ESR option.
-
-The Selenium and GUI layers are complementary: Selenium can inspect DOM state and page content, while GUI tools can operate native dialogs and the visible desktop. Generic GUI tools are intentionally not duplicated as browser-specific click/type tools.
-
-## Browser state and security
-
-Browser profiles, cookies, downloads, storage, cache, and authentication state remain inside the VM. Use a dedicated profile and do not reuse host browser directories. The VM is the isolation boundary. The project does not implement host filesystem access, host command execution, host process control, host SSH-key access, host credentials, host browser profiles, host Docker sockets, hypervisor management, or VM escape mechanisms. Docker may be installed and used inside the VM; never expose the host Docker socket.
-
-## Testing
+## Testing and troubleshooting
 
 ```bash
 npm run build
 npm test
 npm run lint
-./scripts/test-vm.sh
+ssh vmuser@192.168.122.50 'node /opt/computer-mcp-backend/dist/index.js'
 ```
 
-Manual integration should verify: X11 startup, MCPO launch and discovery, desktop screenshot/dimensions, mouse/keyboard/clipboard, terminal and Firefox GUI use, Selenium visible Firefox startup, navigation, element lookup, page text, forms, tabs/windows, cookies, browser screenshot, switching to GUI interaction with the visible browser, native dialogs, shell commands, builds, and clean shutdown. Selenium and GUI session continuity is only claimed for browsers launched by this server and must be tested in the target VM.
+When MCPO reports `McpError: Connection closed`, verify the host build, SSH key, known-hosts configuration, guest path, guest Node.js installation, and the Backend build. Do not point the host proxy at a Windows Node.js process or expect WSL fallback.
 
-## Dependencies and license
+## License
 
-Runtime dependencies are the MCP TypeScript SDK, Zod, and Selenium WebDriver. Linux facilities are invoked directly. Selenium WebDriver is genuine Selenium, not a wrapper around Playwright or Puppeteer. The project is GPL-3.0-only; see [LICENSE](LICENSE). Review third-party package licenses before redistribution.
-
-## AI-generated code disclaimer
-
-This project was generated entirely with the assistance of artificial intelligence. The source code, documentation, tests, configuration, and other project materials were produced by AI and may contain errors, security vulnerabilities, incorrect assumptions, or other defects.
-
-This project is intended for development, testing, research, and experimentation. Review, test, and audit the project before using it in security-sensitive or production environments. This disclaimer does not replace the GPL-3.0-only license or applicable third-party licenses.
-
-## Limitations
-
-The GUI layer currently targets X11. Wayland compositor security may prevent direct capture and input. Selenium browser startup and driver resolution depend on the installed browser, Selenium Manager, and VM network configuration. Existing browser-process attachment is not implemented or claimed. The project is not a VM security audit.
+GPL-3.0-only. See [LICENSE](LICENSE). The guest runtime and its documentation are maintained in `Computer-MCP-Backend`.

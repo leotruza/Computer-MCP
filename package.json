@@ -1,44 +1,22 @@
 {
   "name": "computer-mcp",
   "version": "1.0.0",
-  "description": "MCP server for controlling a Linux desktop through screenshots, mouse, keyboard, and clipboard.",
+  "description": "Host-side MCP stdio proxy for a Linux guest runtime.",
   "type": "module",
-  "bin": {
-    "computer-mcp": "dist/index.js"
-  },
+  "bin": { "computer-mcp": "dist/index.js" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "node --test --import tsx test/**/*.test.ts",
-    "lint": "tsc --noEmit -p tsconfig.json",
-    "benchmark:browsers": "node scripts/benchmark-browsers.mjs"
+    "lint": "tsc --noEmit -p tsconfig.json"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/leotruza/Computer-MCP.git"
-  },
+  "repository": { "type": "git", "url": "https://github.com/leotruza/Computer-MCP.git" },
   "license": "GPL-3.0-only",
-  "engines": {
-    "node": ">=20"
-  },
-  "keywords": [
-    "mcp",
-    "linux",
-    "x11",
-    "gui",
-    "computer-use",
-    "open-webui",
-    "mcpo"
-  ],
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "selenium-webdriver": "^4.34.0",
-    "zod": "^3.25.67"
-  },
+  "engines": { "node": ">=20" },
+  "keywords": ["mcp", "ssh", "proxy", "linux-vm", "open-webui", "mcpo"],
   "devDependencies": {
     "@types/node": "^22.15.30",
-    "@types/selenium-webdriver": "^4.35.7",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
