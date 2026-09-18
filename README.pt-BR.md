@@ -97,6 +97,19 @@ mcpo --host 127.0.0.1 --port 8084 -- node /caminho/absoluto/para/Computer-MCP/di
 
 Abra `http://127.0.0.1:8084/docs` e configure esse servidor OpenAPI externo no Open WebUI. Mantenha o MCPO em loopback, salvo se houver uma configuração de rede autenticada separada.
 
+### Troubleshooting do MCPO
+
+O comando depois de `--` deve ser o servidor compilado dentro do convidado Linux. Depois de baixar um novo commit, compile antes de iniciar o MCPO:
+
+```bash
+git pull --ff-only origin main
+npm ci
+npm run build
+mcpo --host 127.0.0.1 --port 8084 -- node /caminho/absoluto/para/Computer-MCP/dist/index.js
+```
+
+Não aponte o MCPO para `C:\Program Files\nodejs\node.exe` nem para um checkout Windows. O servidor encerra explicitamente quando executado no Windows e não faz fallback para WSL. Se o MCPO reportar `McpError: Connection closed`, execute `node dist/index.js` diretamente na VM Linux, confirme que o build passou e examine stderr antes de tentar o MCPO novamente. Um `dist/index.js` ausente/desatualizado, plataforma host incompatível ou falha na inicialização do Node aparecem para o MCPO como uma conexão stdio fechada.
+
 ## Ferramentas MCP
 
 ### Controle do computador

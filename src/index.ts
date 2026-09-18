@@ -10,6 +10,11 @@ import * as keyboard from "./platform/keyboard.js";
 import * as shell from "./platform/shell.js";
 import * as selenium from "./platform/selenium.js";
 
+if (process.platform !== "linux") {
+  console.error(`computer-mcp requires a Linux VM; detected ${process.platform}. Run this server inside the documented Linux guest. Windows host execution and implicit WSL fallback are not supported.`);
+  process.exit(1);
+}
+
 const number = (min?: number, max?: number) => z.number().finite().min(min ?? -Infinity).max(max ?? Infinity);
 const button = z.enum(["left", "right", "middle"]);
 const schemas = {

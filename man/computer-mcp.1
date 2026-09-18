@@ -92,6 +92,15 @@ DISPLAY must identify an accessible X11 display in the logged-in desktop session
 .B mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
 .PP
 MCPO converts the stdio server into OpenAPI-compatible HTTP endpoints for Open WebUI.
+.SH MCPO TROUBLESHOOTING
+Run the server inside the Linux guest, not from a Windows checkout or Windows Node.js. After updating the repository, rebuild before launching MCPO:
+.EX
+git pull --ff-only origin main
+npm ci
+npm run build
+mcpo --host 127.0.0.1 --port 8084 -- node /absolute/path/to/Computer-MCP/dist/index.js
+.EE
+The program exits explicitly on non-Linux platforms and never falls back to WSL. If MCPO reports "McpError: Connection closed", run node dist/index.js directly in the Linux guest and inspect stderr. A missing or stale dist/index.js, unsupported platform, or failed Node startup is presented by MCPO as a closed stdio connection.
 .SH FILES
 .I dist/index.js
 .br
